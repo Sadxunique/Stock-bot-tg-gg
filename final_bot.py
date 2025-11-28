@@ -110,7 +110,7 @@ def get_main_keyboard():
 
 async def send_stock_command(user_id):
     try:
-        client = TelegramClient('render_session', API_ID, API_HASH)
+        client = TelegramClient('command_session', API_ID, API_HASH)
         await client.start()
         if await client.is_user_authorized():
             await client.send_message(STOCK_BOT, 'Сток')
@@ -215,7 +215,7 @@ async def send_stock_notification(stock_text, message_id, from_user_id=None):
 
 async def cleanup_old_messages():
     try:
-        client = TelegramClient('render_session', API_ID, API_HASH)
+        client = TelegramClient('cleaner_session', API_ID, API_HASH)
         await client.start()
 
         async for message in client.iter_messages(TARGET_CHAT_ID):
