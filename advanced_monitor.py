@@ -81,7 +81,7 @@ async def handle_stock_update(event):
 async def monitor_user_requests():
     """Мониторинг запросов пользователей к @gargenstockbot"""
     try:
-        client = TelegramClient('render_session', API_ID, API_HASH)
+        client = TelegramClient('monitor_session', API_ID, API_HASH)
         await client.start()
 
         @client.on(events.NewMessage(pattern='Сток|сток', chats=STOCK_BOT))
@@ -106,7 +106,7 @@ async def main():
     asyncio.create_task(monitor_user_requests())
 
     # Используем отдельную сессию для мониторинга
-    client = TelegramClient('render_session', API_ID, API_HASH)
+    client = TelegramClient('monitor_session', API_ID, API_HASH)
 
     try:
         await client.start()
