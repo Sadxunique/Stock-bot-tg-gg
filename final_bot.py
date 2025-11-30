@@ -4,24 +4,8 @@ import logging
 import hashlib
 import time
 import asyncio
-from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-
-# Flask app для веб-сервера
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "🤖 Бот мониторинга акций работает!"
-
-@app.route('/health')
-def health():
-    return "✅ OK"
-
-@app.route('/ping')
-def ping():
-    return "🏓 PONG"
+from telegram.ext import ContextTypes
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -231,21 +215,3 @@ async def send_stock_notification(stock_text, message_id, from_user_id=None):
     except Exception as e:
         logger.error(f"❌ Ошибка в send_stock_notification: {e}")
         return False
-
-def run_bot():
-    """Запуск Telegram бота"""
-    try:
-        # Создаем новую event loop для этого потока
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        app_bot = Application.builder().token(BOT_TOKEN).build()
-        app_bot.add_handler(CommandHandler("start", start_command))
-        app_bot.add_handler(CallbackQueryHandler(button_handler))
-        
-        logger.info("🤖 Telegram бот запускается...")
-        app_bot.run_polling(drop_pending_updates=True)
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка запуска бота: {e}")
