@@ -3,7 +3,7 @@ import os
 import logging
 import hashlib
 import time
-import threading
+import asyncio
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -235,6 +235,11 @@ async def send_stock_notification(stock_text, message_id, from_user_id=None):
 def run_bot():
     """Запуск Telegram бота"""
     try:
+        # Создаем новую event loop для этого потока
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         app_bot = Application.builder().token(BOT_TOKEN).build()
         app_bot.add_handler(CommandHandler("start", start_command))
         app_bot.add_handler(CallbackQueryHandler(button_handler))
