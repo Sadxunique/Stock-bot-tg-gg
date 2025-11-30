@@ -79,23 +79,25 @@ async def handle_stock_update(event):
 
 async def monitor_user_requests():
     """Мониторинг запросов пользователей к @gargenstockbot"""
-    try:
-        client = TelegramClient('monitor_session', API_ID, API_HASH)
-        await client.start()
+    while True:
+        try:
+            client = TelegramClient('monitor_session', API_ID, API_HASH)
+            await client.start()
 
-        @client.on(events.NewMessage(pattern='Сток|сток', chats=STOCK_BOT))
-        async def handler(event):
-            # Ловим запросы "Сток" от пользователей
-            if event.is_private and event.message.out:
-                user_id = event.message.sender_id
-                last_requests[user_id] = asyncio.get_event_loop().time()
-                logger.info(f"📝 Зафиксирован запрос 'СТОК' от пользователя {user_id}")
+            @client.on(events.NewMessage(pattern='Сток|сток', chats=STOCK_BOT))
+            async def handler(event):
+                # Ловим запросы "Сток" от пользователей
+                if event.is_private and event.message.out:
+                    user_id = event.message.sender_id
+                    last_requests[user_id] = asyncio.get_event_loop().time()
+                    logger.info(f"📝 Зафиксирован запрос 'СТОК' от пользователя {user_id}")
 
-        logger.info("✅ Мониторинг запросов пользователей запущен")
-        await client.run_until_disconnected()
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка мониторинга запросов: {e}")
+            logger.info("✅ Мониторинг запросов пользователей запущен")
+            await client.run_until_disconnected()
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка мониторинга запросов: {e}")
+            await asyncio.sleep(30)
 
 async def main():
     """Основная функция мониторинга"""
@@ -110,32 +112,34 @@ async def main():
     # Основной клиент для мониторинга сообщений
     client = TelegramClient('monitor_session', API_ID, API_HASH)
 
-    try:
-        await client.start()
-
-        if not await client.is_user_authorized():
-            logger.error("❌ Сессия не авторизована! Запустите авторизацию.")
-            return
-
-        # Обработчик всех сообщений от stock бота
-        @client.on(events.NewMessage(chats=STOCK_BOT))
-        async def handler(event):
-            await handle_stock_update(event)
-
-        logger.info("✅ Мониторинг запущен! Ожидаем авто-уведомления от @gargenstockbot...")
-        print("🎯 Мониторинг активен. Ждем авто-уведомления о новых акциях...")
-
-        # Бесконечный цикл
-        while True:
-            await asyncio.sleep(10)
-
-    except Exception as e:
-        logger.error(f"❌ Ошибка мониторинга: {e}")
-    finally:
+    while True:
         try:
-            await client.disconnect()
-        except:
-            pass
+            await client.start()
+
+            if not await client.is_user_authorized():
+                logger.error("❌ Сессия не авторизована!")
+                await asyncio.sleep(60)
+                continue
+
+            # Обработчик всех сообщений от stock бота
+            @client.on(events.NewMessage(chats=STOCK_BOT))
+            async def handler(event):
+                await handle_stock_update(event)
+
+            logger.info("✅ Мониторинг запущен! Ожидаем сообщения от @gargenstockbot...")
+
+            # Ждем пока клиент не отключится
+            await client.run_until_disconnected()
+
+        except Exception as e:
+            logger.error(f"❌ Ошибка мониторинга: {e}")
+            await asyncio.sleep(30)  # Ждем перед переподключением
+            
+        finally:
+            try:
+                await client.disconnect()
+            except:
+                pass
 
 if __name__ == '__main__':
     try:
