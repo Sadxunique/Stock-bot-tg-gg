@@ -19,8 +19,11 @@ def run_flask():
 
 def run_telegram_bot():
     """Запуск основного Telegram бота"""
-    from final_bot import run_bot
-    run_bot()
+    try:
+        from final_bot import run_bot
+        run_bot()
+    except Exception as e:
+        logger.error(f"❌ Ошибка запуска Telegram бота: {e}")
 
 async def run_telethon_monitor():
     """Запуск Telethon мониторинга"""
