@@ -1,9 +1,12 @@
 import asyncio
 import logging
-from telethon import TelegramClient, events
 import sys
 import os
 import requests
+from telethon import TelegramClient, events
+
+# Добавляем текущую директорию в путь
+sys.path.append(os.getcwd())
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -13,18 +16,16 @@ logger = logging.getLogger(__name__)
 API_ID = 38978588
 API_HASH = 'fbeec321d7fc8576d585195d3e2b6eba'
 STOCK_BOT = '@gargenstockbot'
-
-# Ваш user_id
 MY_USER_ID = 7368702836
 
 # Словарь для отслеживания последних запросов
 last_requests = {}
 
 async def self_ping_monitor():
-    """Самопинг для мониторинга"""
+    """Самопинг для поддержания активности на Render"""
     while True:
         try:
-            # Пингуем основной бот если есть URL
+            # Пингуем основной URL Render
             render_url = os.environ.get('RENDER_EXTERNAL_URL')
             if render_url:
                 response = requests.get(f"{render_url}/health", timeout=10)
@@ -34,9 +35,10 @@ async def self_ping_monitor():
         except Exception as e:
             logger.error(f"❌ Ошибка самопинга мониторинга: {e}")
         
-        await asyncio.sleep(5)
+        await asyncio.sleep(5)  # Пинг каждые 5 секунд
 
 async def handle_stock_update(event):
+    """Обработка новых сообщений от stock бота"""
     try:
         text = event.message.text
         message_id = event.message.id
@@ -61,10 +63,7 @@ async def handle_stock_update(event):
 
         # Импортируем и запускаем отправку уведомлений
         try:
-            sys.path.append(os.getcwd())
             from final_bot import send_stock_notification
-
-            # Запускаем отправку уведомлений с информацией об отправителе
             success = await send_stock_notification(text, message_id, from_user_id)
 
             if success:
@@ -92,20 +91,23 @@ async def monitor_user_requests():
                 last_requests[user_id] = asyncio.get_event_loop().time()
                 logger.info(f"📝 Зафиксирован запрос 'СТОК' от пользователя {user_id}")
 
+        logger.info("✅ Мониторинг запросов пользователей запущен")
         await client.run_until_disconnected()
+        
     except Exception as e:
         logger.error(f"❌ Ошибка мониторинга запросов: {e}")
 
 async def main():
+    """Основная функция мониторинга"""
     logger.info("🔍 Запуск мониторинга авто-уведомлений...")
 
     # Запускаем самопинг
     asyncio.create_task(self_ping_monitor())
 
-    # Запускаем мониторинг запросов пользователей в отдельной задаче
+    # Запускаем мониторинг запросов пользователей
     asyncio.create_task(monitor_user_requests())
 
-    # Используем отдельную сессию для мониторинга
+    # Основной клиент для мониторинга сообщений
     client = TelegramClient('monitor_session', API_ID, API_HASH)
 
     try:
@@ -115,6 +117,7 @@ async def main():
             logger.error("❌ Сессия не авторизована! Запустите авторизацию.")
             return
 
+        # Обработчик всех сообщений от stock бота
         @client.on(events.NewMessage(chats=STOCK_BOT))
         async def handler(event):
             await handle_stock_update(event)
